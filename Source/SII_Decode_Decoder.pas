@@ -36,6 +36,7 @@ type
     Function GetDataBlockCount: Integer;
     Function GetDataBlock(Index: Integer): TSIIBin_DataBlock;
   protected
+    class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
     procedure Initialize; virtual;
     Function IndexOfStructure(StrucuteIndex: TSIIBin_StructureIndex): Integer; virtual;
     Function LoadStructureBlock(Stream: TStream): Boolean; virtual;
@@ -64,7 +65,10 @@ type
 implementation
 
 uses
-  SysUtils, AuxTypes, BinaryStreaming;
+  SysUtils, BinaryStreaming
+{$IFDEF FPC_NonUnicode}
+  , LazUTF8
+{$ENDIF};
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -96,6 +100,17 @@ end;
 {------------------------------------------------------------------------------}
 {   TSIIBin_Decoder - protected methods                                        }
 {------------------------------------------------------------------------------}
+
+class Function TSIIBin_Decoder.CreateFileStream(const FileName: String; Mode: Word): TFileStream;
+begin
+{$IFDEF FPC_NonUnicode}
+Result := TFileStream.Create(UTF8ToSys(FileName),Mode);
+{$ELSE}
+Result := TFileStream.Create(FileName,Mode);
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TSIIBin_Decoder.Initialize;
 begin
@@ -211,7 +226,7 @@ Function TSIIBin_Decoder.IsBinarySIIFile(const FileName: String): Boolean;
 var
   FileStream: TFileStream;
 begin
-FileStream := TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
+FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
 try
   Result := IsBinarySIIStream(FileStream);
 finally
@@ -256,7 +271,7 @@ procedure TSIIBin_Decoder.LoadFromFile(const FileName: String);
 var
   FileStream: TFileStream;
 begin
-FileStream := TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
+FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
 try
   LoadFromStream(FileStream);
 finally

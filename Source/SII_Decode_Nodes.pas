@@ -513,10 +513,10 @@ type
     destructor Destroy; override;
     procedure Load(Stream: TStream); virtual;
     Function AsString: String; virtual;
+    property BlockID: TSIIBin_Value_ID read fBlockID;
     property Fields[Index: Integer]: TSIIBin_Value read GetField;
   published
     property Name: AnsiString read fName;
-    property BlockID: TSIIBin_Value_ID read fBlockID;
     property FieldCount: Integer read GetFieldCount;
   end;
 

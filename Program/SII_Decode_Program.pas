@@ -50,7 +50,11 @@ try
         Output := TStringList.Create;
         try
           WriteLn('Loading...');
+        {$IFDEF FPC_NonUnicode_NoUTF8RTL}
+          LoadFromFile(SysToUTF8(ParamStr(1)));
+        {$ELSE}
           LoadFromFile(ParamStr(1));
+        {$ENDIF}
           WriteLn('Converting...');
           Convert(Output);
           WriteLn('Saving...');
