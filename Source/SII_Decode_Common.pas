@@ -76,6 +76,7 @@ Function SIIBin_SingleToStr(Value: Single): String;
 Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): String;
 
 Function SIIBin_IsLimitedAlphabet(const Str: AnsiString): Boolean;
+procedure SIIBin_RectifyString(var Str: AnsiString);
 
 
 implementation
@@ -192,6 +193,38 @@ For i := 1 to Length(Str) do
       Result := False;
       Break;
     end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SIIBin_RectifyString(var Str: AnsiString);
+var
+  i:    Integer;
+  Temp: AnsiString;
+
+  Function NonASCII: Boolean;
+  var
+    ii: Integer;
+  begin
+    Result := True;
+    For ii := 1 to Length(Str) do
+      If Ord(Str[ii]) >= 127 then Exit;
+    Result := False;
+  end;
+
+begin
+If NonASCII then
+  begin
+    Temp := '';
+    For i := 1 to Length(Str) do
+      begin
+        If (Ord(Str[i]) < 127) and (Ord(Str[i]) > 31) then
+          Temp := Temp + Str[i]
+        else
+          Temp := Temp + AnsiLowerCase(Format('\x%.2x',[Ord(Str[i])]));
+      end;
+    Str := Temp;
+  end;
 end;
 
 end.

@@ -1,0 +1,43 @@
+0x00000000                  invalid/reserved
+0x00000001                  string
+0x00000002                  array of string
+0x00000003                  encoded string
+0x00000004                  array of encoded string
+0x00000005                  single
+0x00000006                  array of single
+0x00000007                  unknown (expecting double)
+0x00000008                  unknown (expecting array of double)
+0x00000009                  vec3s
+0x0000000A                  unknown (probably array of vec3s)
+0x0000000B - 0x00000010     unknown
+0x00000011                  vec3i
+0x00000012                  array of vec3i
+0x00000013 - 0x00000016     unknown
+0x00000017                  unknown (probably vec4s)
+0x00000018                  array of vec4s
+0x00000019                  vec8s
+0x0000001A                  array of vec8s
+0x0000001B - 0x00000024     unknown
+0x00000025                  int32
+0x00000026                  array of int32
+0x00000027                  uint32
+0x00000028                  array of uint32
+0x00000029                  unknown (expecting int16) 
+0x0000002A                  unknown (expecting array of int16)
+0x0000002B                  uint16
+0x0000002C                  array of uint16
+0x0000002D - 0x00000030     unknown
+0x00000031                  int64
+0x00000032                  unknown (probably array of int64)
+0x00000033                  uint64
+0x00000034                  array of uint64
+0x00000035                  bytebool
+0x00000036                  array of bytebool
+0x00000037 - 0x00000038     unknown
+0x00000039                  ID
+0x0000003A                  array of ID
+0x0000003B                  ID
+0x0000003C                  array of ID
+0x0000003D                  ID
+0x0000003E                  unknown (probably array of ID)
+0x0000003F - 0xFFFFFFFF     unknown

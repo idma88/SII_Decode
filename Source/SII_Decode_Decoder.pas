@@ -214,7 +214,7 @@ end;
 
 Function TSIIBin_Decoder.IsBinarySIIStream(Stream: TStream): Boolean;
 begin
-If (Stream.Size - Stream.Position) > 14 then
+If (Stream.Size - Stream.Position) >= 14 then
   Result := Stream_ReadUInt32(Stream,False) = SIIBin_Signature
 else
   Result := False;
@@ -243,7 +243,7 @@ var
   Continue:       Boolean;
 begin
 InitialPos := Stream.Position;
-If (Stream.Size - InitialPos) > 0 then
+If (Stream.Size - InitialPos) >= 14 then
   begin
     DoProgress(0.0,ptLoading);
     Initialize;

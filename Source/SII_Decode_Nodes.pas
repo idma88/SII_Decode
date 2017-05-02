@@ -54,6 +54,7 @@ type
   private
     fValue: AnsiString;
   protected
+    procedure Initialize; override;
     Function GetValueType: TSIIBin_ValueType; override;
     procedure Load(Stream: TStream); override;
   public
@@ -72,6 +73,7 @@ type
   private
     fValue: array of AnsiString;
   protected
+    procedure Initialize; override;
     Function GetValueType: TSIIBin_ValueType; override;
     procedure Load(Stream: TStream); override;
   public
@@ -625,6 +627,13 @@ end;
 {   TSIIBin_Value_00000001 - protected methods                                 }
 {------------------------------------------------------------------------------}
 
+procedure TSIIBin_Value_00000001.Initialize;
+begin
+SIIBin_RectifyString(fValue);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TSIIBin_Value_00000001.GetValueType: TSIIBin_ValueType;
 begin
 Result := $00000001;
@@ -661,6 +670,16 @@ end;
 {------------------------------------------------------------------------------}
 {   TSIIBin_Value_00000002 - protected methods                                 }
 {------------------------------------------------------------------------------}
+
+procedure TSIIBin_Value_00000002.Initialize;
+var
+  i:  Integer;
+begin
+For i := Low(fValue) to High(fValue) do
+  SIIBin_RectifyString(fValue[i]);
+end;
+
+//------------------------------------------------------------------------------
 
 Function TSIIBin_Value_00000002.GetValueType: TSIIBin_ValueType;
 begin
