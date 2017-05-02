@@ -54,6 +54,7 @@ type
   private
     fValue: AnsiString;
   protected
+    procedure Initialize; override;
     Function GetValueType: TSIIBin_ValueType; override;
     procedure Load(Stream: TStream); override;
   public
@@ -72,6 +73,7 @@ type
   private
     fValue: array of AnsiString;
   protected
+    procedure Initialize; override;
     Function GetValueType: TSIIBin_ValueType; override;
     procedure Load(Stream: TStream); override;
   public
@@ -248,6 +250,27 @@ type
     procedure Load(Stream: TStream); override;
   public
     Function AsString: String; override;
+  end;
+
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                            TSIIBin_Value_0000001A                            }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{==============================================================================}
+{   TSIIBin_Value_0000001A - declaration                                       }
+{==============================================================================}
+  TSIIBin_Value_0000001A = class(TSIIBin_Value)
+  private
+    fValue: array of TSIIBin_Value_Vec8s;
+  protected
+    procedure Initialize; override;
+    Function GetValueType: TSIIBin_ValueType; override;
+    procedure Load(Stream: TStream); override;
+  public
+    Function AsString: String; override;
+    Function AsLine(IndentCount: Integer = 0): String; override;
   end;
 
 {==============================================================================}
@@ -604,6 +627,13 @@ end;
 {   TSIIBin_Value_00000001 - protected methods                                 }
 {------------------------------------------------------------------------------}
 
+procedure TSIIBin_Value_00000001.Initialize;
+begin
+SIIBin_RectifyString(fValue);
+end;
+
+//------------------------------------------------------------------------------
+
 Function TSIIBin_Value_00000001.GetValueType: TSIIBin_ValueType;
 begin
 Result := $00000001;
@@ -640,6 +670,16 @@ end;
 {------------------------------------------------------------------------------}
 {   TSIIBin_Value_00000002 - protected methods                                 }
 {------------------------------------------------------------------------------}
+
+procedure TSIIBin_Value_00000002.Initialize;
+var
+  i:  Integer;
+begin
+For i := Low(fValue) to High(fValue) do
+  SIIBin_RectifyString(fValue[i]);
+end;
+
+//------------------------------------------------------------------------------
 
 Function TSIIBin_Value_00000002.GetValueType: TSIIBin_ValueType;
 begin
@@ -1098,6 +1138,74 @@ Result := Format('(%s, %s, %s) (%s; %s, %s, %s)',
 end;
 
 
+
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{                            TSIIBin_Value_0000001A                            }
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{==============================================================================}
+{   TSIIBin_Value_0000001A - declaration                                       }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{   TSIIBin_Value_0000001A - protected methods                                 }
+{------------------------------------------------------------------------------}
+
+procedure TSIIBin_Value_0000001A.Initialize;
+var
+  i,Coef: Integer;
+begin
+For i := Low(fValue) to High(fValue) do
+  begin
+    Coef := Trunc(fValue[i][3]);
+    fValue[i][0] := fValue[i][0] + Integer(((Coef and $FFF) - 2048) shl 9);
+    fValue[i][2] := fValue[i][2] + Integer((((Coef shr 12) and $FFF) - 2048) shl 9);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TSIIBin_Value_0000001A.GetValueType: TSIIBin_ValueType;
+begin
+Result := $0000001A;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TSIIBin_Value_0000001A.Load(Stream: TStream);
+var
+  i:  Integer;
+begin
+SetLength(fValue,Stream_ReadUInt32(Stream));
+For i := Low(fValue) to High(fValue) do
+  Stream_ReadBuffer(Stream,fValue[i],SizeOf(TSIIBin_Value_Vec8s));
+end;
+
+{------------------------------------------------------------------------------}
+{   TSIIBin_Value_0000001A - public methods                                    }
+{------------------------------------------------------------------------------}
+
+Function TSIIBin_Value_0000001A.AsString: String;
+begin
+Result := Format('%d',[Length(fValue)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TSIIBin_Value_0000001A.AsLine(IndentCount: Integer = 0): String;
+var
+  i:  Integer;
+begin
+Result := StringOfChar(' ',IndentCount) + Format('%s: %d',[fName,Length(fValue)]);
+For i := Low(fValue) to High(fValue) do
+  Result := Result + sLineBreak + StringOfChar(' ',IndentCount) + Format('%s[%d]: (%s, %s, %s) (%s; %s, %s, %s)',
+              [fName,i,SIIBin_SingleToStr(fValue[i][0]),SIIBin_SingleToStr(fValue[i][1]),SIIBin_SingleToStr(fValue[i][2]),
+               SIIBin_SingleToStr(fValue[i][4]),SIIBin_SingleToStr(fValue[i][5]),
+               SIIBin_SingleToStr(fValue[i][6]),SIIBin_SingleToStr(fValue[i][7])]);
+end;
+
+
+
 {==============================================================================}
 {------------------------------------------------------------------------------}
 {                            TSIIBin_Value_00000025                            }
@@ -1429,7 +1537,10 @@ end;
 
 Function TSIIBin_Value_00000033.AsString: String;
 begin
-Result := Format('%u',[fValue])
+If (Int64Rec(fValue).Lo <> $FFFFFFFF) and (Int64Rec(fValue).Hi <> $FFFFFFFF) then
+  Result := Format('%u',[fValue])
+else
+  Result := 'nil';
 end;
 
 
@@ -1478,8 +1589,12 @@ var
 begin
 Result := StringOfChar(' ',IndentCount) + Format('%s: %d',[fName,Length(fValue)]);
 For i := Low(fValue) to High(fValue) do
-  Result := Result + sLineBreak + StringOfChar(' ',IndentCount) +
-            Format('%s[%d]: %u',[fName,i,fValue[i]]);
+  If (Int64Rec(fValue[i]).Lo <> $FFFFFFFF) and (Int64Rec(fValue[i]).Hi <> $FFFFFFFF) then
+    Result := Result + sLineBreak + StringOfChar(' ',IndentCount) +
+              Format('%s[%d]: %u',[fName,i,fValue[i]])
+  else
+    Result := Result + sLineBreak + StringOfChar(' ',IndentCount) +
+              Format('%s[%d]: nil',[fName,i])
 end;
 
 
@@ -1740,6 +1855,7 @@ For i := Low(fStructure.Fields) to High(fStructure.Fields) do
       $00000012:  FieldObj := TSIIBin_Value_00000012.Create(fStructure.Fields[i].ValueName,Stream);
       $00000018:  FieldObj := TSIIBin_Value_00000018.Create(fStructure.Fields[i].ValueName,Stream);
       $00000019:  FieldObj := TSIIBin_Value_00000019.Create(fStructure.Fields[i].ValueName,Stream);
+      $0000001A:  FieldObj := TSIIBin_Value_0000001A.Create(fStructure.Fields[i].ValueName,Stream);
       $00000025:  FieldObj := TSIIBin_Value_00000025.Create(fStructure.Fields[i].ValueName,Stream);
       $00000026:  FieldObj := TSIIBin_Value_00000026.Create(fStructure.Fields[i].ValueName,Stream);
       $00000027:  FieldObj := TSIIBin_Value_00000027.Create(fStructure.Fields[i].ValueName,Stream);
@@ -1757,7 +1873,8 @@ For i := Low(fStructure.Fields) to High(fStructure.Fields) do
       $0000003A,
       $0000003C:  FieldObj := TSIIBin_Value_0000003A.Create(fStructure.Fields[i].ValueName,Stream);
     else
-      raise Exception.CreateFmt('TSIIBin_DataBlock.Load: Unknown value type (%d).',[fStructure.Fields[i].ValueType]);
+      raise Exception.CreateFmt('TSIIBin_DataBlock.Load: Unknown value type: %s(%d) at %d.',
+            [fStructure.Fields[i].ValueName,fStructure.Fields[i].ValueType,Stream.Position]);
     end;
     fFields.Add(FieldObj);
   end;

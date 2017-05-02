@@ -76,6 +76,7 @@ Function SIIBin_SingleToStr(Value: Single): String;
 Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): String;
 
 Function SIIBin_IsLimitedAlphabet(const Str: AnsiString): Boolean;
+procedure SIIBin_RectifyString(var Str: AnsiString);
 
 
 implementation
@@ -151,7 +152,7 @@ end;
 
 Function SIIBin_SingleToStr(Value: Single): String;
 begin
-If Frac(Value) <> 0 then
+If (Frac(Value) <> 0) or (Value >= 1e7) then
   Result := '&' + AnsiLowerCase(SingleToHex(Value))
 else
   Result := Format('%.0f',[Value]);
@@ -165,8 +166,13 @@ var
 begin
 case ID.Length of
   $00:  Result := 'null';
-  $FF:  Result := Format('_nameless.%.4x.%.4x',[Int64Rec(ID.Parts[0]).Words[1],
-                                                Int64Rec(ID.Parts[0]).Words[0]]);
+{$IFDEF NamelessID_NewHexStyle}
+  $FF:  Result := AnsiLowerCase(Format('_nameless.%x.%.4x',
+                    [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]]));
+{$ELSE}
+  $FF:  Result := AnsiUpperCase(Format('_nameless.%.4x.%.4x',
+                    [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]]));
+{$ENDIF}
 else
   Result := ID.PartsStr[0];
   For i := Succ(Low(ID.Parts)) to High(ID.Parts) do
@@ -187,6 +193,38 @@ For i := 1 to Length(Str) do
       Result := False;
       Break;
     end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SIIBin_RectifyString(var Str: AnsiString);
+var
+  i:    Integer;
+  Temp: AnsiString;
+
+  Function NonASCII: Boolean;
+  var
+    ii: Integer;
+  begin
+    Result := True;
+    For ii := 1 to Length(Str) do
+      If Ord(Str[ii]) >= 127 then Exit;
+    Result := False;
+  end;
+
+begin
+If NonASCII then
+  begin
+    Temp := '';
+    For i := 1 to Length(Str) do
+      begin
+        If (Ord(Str[i]) < 127) and (Ord(Str[i]) > 31) then
+          Temp := Temp + Str[i]
+        else
+          Temp := Temp + AnsiLowerCase(Format('\x%.2x',[Ord(Str[i])]));
+      end;
+    Str := Temp;
+  end;
 end;
 
 end.
