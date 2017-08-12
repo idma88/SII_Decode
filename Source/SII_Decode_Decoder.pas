@@ -36,7 +36,6 @@ type
     Function GetDataBlockCount: Integer;
     Function GetDataBlock(Index: Integer): TSIIBin_DataBlock;
   protected
-    class Function CreateFileStream(const FileName: String; Mode: Word): TFileStream; virtual;
     procedure Initialize; virtual;
     Function IndexOfStructure(StrucuteIndex: TSIIBin_StructureIndex): Integer; virtual;
     Function LoadStructureBlock(Stream: TStream): Boolean; virtual;
@@ -65,10 +64,7 @@ type
 implementation
 
 uses
-  SysUtils, BinaryStreaming
-{$IFDEF FPC_NonUnicode}
-  , LazUTF8
-{$ENDIF};
+  SysUtils, BinaryStreaming, StrRect;
 
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -100,17 +96,6 @@ end;
 {------------------------------------------------------------------------------}
 {   TSIIBin_Decoder - protected methods                                        }
 {------------------------------------------------------------------------------}
-
-class Function TSIIBin_Decoder.CreateFileStream(const FileName: String; Mode: Word): TFileStream;
-begin
-{$IFDEF FPC_NonUnicode}
-Result := TFileStream.Create(UTF8ToSys(FileName),Mode);
-{$ELSE}
-Result := TFileStream.Create(FileName,Mode);
-{$ENDIF}
-end;
-
-//------------------------------------------------------------------------------
 
 procedure TSIIBin_Decoder.Initialize;
 begin
@@ -215,7 +200,7 @@ end;
 Function TSIIBin_Decoder.IsBinarySIIStream(Stream: TStream): Boolean;
 begin
 If (Stream.Size - Stream.Position) >= 14 then
-  Result := Stream_ReadUInt32(Stream,False) = SIIBin_Signature
+  Result := Stream_ReadUInt32(Stream,False) = SIIBin_Signature_Bin
 else
   Result := False;
 end;
@@ -226,7 +211,7 @@ Function TSIIBin_Decoder.IsBinarySIIFile(const FileName: String): Boolean;
 var
   FileStream: TFileStream;
 begin
-FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
+FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
   Result := IsBinarySIIStream(FileStream);
 finally
@@ -248,9 +233,17 @@ If (Stream.Size - InitialPos) >= 14 then
     DoProgress(0.0,ptLoading);
     Initialize;
     Stream_ReadBuffer(Stream,fFileStructure.Header,SizeOf(TSIIBin_Header));
-    If (fFileStructure.Header.Signature <> SIIBin_Signature) or
-       (fFileStructure.Header.Unknown <> 2) then
+    case fFileStructure.Header.Signature of
+      SIIBin_Signature_Bin:
+        If fFileStructure.Header.Unknown <> 2 then
+          raise Exception.CreateFmt('TSIIBin_Decoder.LoadFromStream: Unknown format (0x%.8x).',[fFileStructure.Header.Signature]);
+      SIIBin_Signature_Crypt:
+        raise Exception.Create('TSIIBin_Decoder.LoadFromStream: Data are encrypted.');
+      SIIBin_Signature_Text:
+        raise Exception.Create('TSIIBin_Decoder.LoadFromStream: Data are already decoded.');
+    else
       raise Exception.CreateFmt('TSIIBin_Decoder.LoadFromStream: Unknown format (0x%.8x).',[fFileStructure.Header.Signature]);
+    end;
     Continue := True;
     repeat
       StructureIndex := Stream_ReadUInt32(Stream);
@@ -271,7 +264,7 @@ procedure TSIIBin_Decoder.LoadFromFile(const FileName: String);
 var
   FileStream: TFileStream;
 begin
-FileStream := CreateFileStream(FileName,fmOpenRead or fmShareDenyWrite);
+FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
 try
   LoadFromStream(FileStream);
 finally

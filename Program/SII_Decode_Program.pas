@@ -16,11 +16,8 @@ procedure Main;
 implementation
 
 uses
-  SysUtils, Classes,
-  SII_Decode_Decoder
-{$IFDEF FPC_NonUnicode_NoUTF8RTL}
-  , LazUTF8
-{$ENDIF};
+  SysUtils, Classes, StrRect,
+  SII_Decode_Decoder;
 
 procedure Main;
 var
@@ -50,11 +47,7 @@ try
         Output := TStringList.Create;
         try
           WriteLn('Loading...');
-        {$IFDEF FPC_NonUnicode_NoUTF8RTL}
-          LoadFromFile(SysToUTF8(ParamStr(1)));
-        {$ELSE}
-          LoadFromFile(ParamStr(1));
-        {$ENDIF}
+          LoadFromFile(RTLToStr(ParamStr(1)));
           WriteLn('Converting...');
           Convert(Output);
           WriteLn('Saving...');
@@ -73,7 +66,8 @@ except
   on E: Exception do
     begin
       WriteLn('An error has occured. Error message:');
-      WriteLn(E.Message);
+      WriteLn;
+      WriteLn('  ',E.Message);
       WriteLn;
       Write('Press enter to continue...'); ReadLn;
     end;

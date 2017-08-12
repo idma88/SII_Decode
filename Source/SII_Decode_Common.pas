@@ -20,7 +20,9 @@ uses
 {==============================================================================}
 
 const
-  SIIBin_Signature = UInt32($49495342);  // BSII
+  SIIBin_Signature_Bin   = UInt32($49495342);   // BSII
+  SIIBin_Signature_Crypt = UInt32($43736353);   // ScsC
+  SIIBin_Signature_Text  = UInt32($4E696953);   // SiiN
 
 type
   TSIIBin_ValueType      = UInt32;
