@@ -175,17 +175,22 @@ case ID.Length of
   $FF:  If ID.Parts[0] <> 0 then
           begin
             Temp := ID.Parts[0];
+            Result := '';
             while Temp <> 0 do
               begin
-                Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
+                If (Temp and not UInt64($FFFF)) <> 0 then
+                  Result := AnsiLowerCase(Format('.%.4x',[UInt16(Temp)])) + Result
+                else
+                  Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
                 Temp := Temp shr 16;
               end;
             Result := '_nameless' + Result;
           end
         else Result := '_nameless.0';
 {$ELSE}
-  $FF:  Result := AnsiUpperCase(Format('_nameless.%.4x.%.4x',
-                    [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]]));
+  $FF:  Result := '_nameless' + AnsiUpperCase(Format('.%.4x.%.4x',
+                                             [Int64Rec(ID.Parts[0]).Words[1],
+                                              Int64Rec(ID.Parts[0]).Words[0]]));
 {$ENDIF}
 else
   Result := ID.PartsStr[0];

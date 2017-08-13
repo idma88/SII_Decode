@@ -42,10 +42,10 @@ type
     procedure LoadDataBlock(Stream: TStream; StructureIndex: TSIIBin_StructureIndex); virtual;
     procedure DoProgress(Progress: Single; ProgressType: TSIIBin_ProgressType); virtual;
   public
+    class Function IsBinarySIIStream(Stream: TStream): Boolean; virtual;
+    class Function IsBinarySIIFile(const FileName: String): Boolean; virtual;
     constructor Create;
     destructor Destroy; override;
-    Function IsBinarySIIStream(Stream: TStream): Boolean; virtual;
-    Function IsBinarySIIFile(const FileName: String): Boolean; virtual;
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: String); virtual;
     procedure Convert(Output: TStrings); virtual;
@@ -181,6 +181,30 @@ end;
 {   TSIIBin_Decoder - public methods                                           }
 {------------------------------------------------------------------------------}
 
+class Function TSIIBin_Decoder.IsBinarySIIStream(Stream: TStream): Boolean;
+begin
+If (Stream.Size - Stream.Position) >= 14 then
+  Result := Stream_ReadUInt32(Stream,False) = SIIBin_Signature_Bin
+else
+  Result := False;
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TSIIBin_Decoder.IsBinarySIIFile(const FileName: String): Boolean;
+var
+  FileStream: TFileStream;
+begin
+FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
+try
+  Result := IsBinarySIIStream(FileStream);
+finally
+  FileStream.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
 constructor TSIIBin_Decoder.Create;
 begin
 inherited Create;
@@ -193,30 +217,6 @@ destructor TSIIBin_Decoder.Destroy;
 begin
 fFileDataBlocks.Free;
 inherited;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TSIIBin_Decoder.IsBinarySIIStream(Stream: TStream): Boolean;
-begin
-If (Stream.Size - Stream.Position) >= 14 then
-  Result := Stream_ReadUInt32(Stream,False) = SIIBin_Signature_Bin
-else
-  Result := False;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TSIIBin_Decoder.IsBinarySIIFile(const FileName: String): Boolean;
-var
-  FileStream: TFileStream;
-begin
-FileStream := TFileStream.Create(StrToRTL(FileName),fmOpenRead or fmShareDenyWrite);
-try
-  Result := IsBinarySIIStream(FileStream);
-finally
-  FileStream.Free;
-end;
 end;
 
 //------------------------------------------------------------------------------
