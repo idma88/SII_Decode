@@ -178,7 +178,10 @@ case ID.Length of
             Result := '';
             while Temp <> 0 do
               begin
-                Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
+                If (Temp and not UInt64($FFFF)) <> 0 then
+                  Result := AnsiLowerCase(Format('.%.4x',[UInt16(Temp)])) + Result
+                else
+                  Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
                 Temp := Temp shr 16;
               end;
             Result := '_nameless' + Result;
