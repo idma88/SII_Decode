@@ -164,13 +164,25 @@ end;
 
 Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): String;
 var
-  i:  Integer;
+  i:    Integer;
+{$IFDEF NamelessID_NewHexStyle}
+  Temp: UInt64;
+{$ENDIF}
 begin
 case ID.Length of
   $00:  Result := 'null';
 {$IFDEF NamelessID_NewHexStyle}
-  $FF:  Result := AnsiLowerCase(Format('_nameless.%x.%.4x',
-                    [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]]));
+  $FF:  If ID.Parts[0] <> 0 then
+          begin
+            Temp := ID.Parts[0];
+            while Temp <> 0 do
+              begin
+                Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
+                Temp := Temp shr 16;
+              end;
+            Result := '_nameless' + Result;
+          end
+        else Result := '_nameless.0';
 {$ELSE}
   $FF:  Result := AnsiUpperCase(Format('_nameless.%.4x.%.4x',
                     [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]]));
