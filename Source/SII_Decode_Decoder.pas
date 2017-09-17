@@ -24,7 +24,7 @@ const
 {
   (8 bytes) header
     (4 bytes) signature
-    (4 bytes) unknown (2)
+    (4 bytes) version (2)
   (5 bytes) an empty structure
     (4 bytes) structure index (0)
     (1 byte ) unknown (0))

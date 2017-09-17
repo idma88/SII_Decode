@@ -165,7 +165,7 @@ SetLength(Result,12);
 Len := 0;
 while EncodedID <> 0 do
   begin
-    CharIdx := Abs(EncodedID mod 38);
+    CharIdx := Abs(Integer(EncodedID mod 38));
     EncodedID := UInt64(EncodedID div 38);
     If (CharIdx >= Low(DecodeTable)) and (CharIdx <= High(DecodeTable)) then
       begin
