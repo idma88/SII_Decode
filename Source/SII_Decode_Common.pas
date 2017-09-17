@@ -25,10 +25,11 @@ const
   SIIBin_Signature_Text  = UInt32($4E696953);   // SiiN
 
 type
-  TSIIBin_ValueType      = UInt32;
-  TSIIBin_ArrayLength    = UInt32;
-  TSIIBin_StringLength   = UInt32;
-  TSIIBin_StructureIndex = UInt32;
+  TSIIBin_BlockType    = UInt32;
+  TSIIBin_ValueType    = UInt32;
+  TSIIBin_ArrayLength  = UInt32;
+  TSIIBin_StringLength = UInt32;
+  TSIIBin_LayoutID     = UInt32;
 
   TSIIBin_Header = packed record
     Signature:  UInt32;
@@ -40,16 +41,16 @@ type
     ValueName:  AnsiString;
   end;
 
-  TSIIBin_Structure = record
+  TSIIBin_Layout = record
     Unknown:  UInt8;
-    Index:    TSIIBin_StructureIndex;
+    ID:       TSIIBin_LayoutID;
     Name:     AnsiString;
     Fields:   array of TSIIBin_NamedValue;
   end;
 
-  TSIIBin_FileStructure = record
-    Header:     TSIIBin_Header;
-    Structures: array of TSIIBin_Structure;
+  TSIIBin_FileLayout = record
+    Header:   TSIIBin_Header;
+    Layouts:  array of TSIIBin_Layout;
   end;
 
   TSIIBin_Value_ID = record
