@@ -143,7 +143,7 @@ Layout.Unknown := Stream_ReadUInt8(Stream);
 If Layout.Unknown <> 0 then
   begin
     Layout.ID := Stream_ReadUInt32(Stream);
-    If Layout.ID <> 0 then
+    If (Layout.ID <> 0) and (IndexOfLayout(Layout.ID) < 0) then
       begin
         SIIBin_LoadString(Stream,Layout.Name);
         ValueCount := 0;
