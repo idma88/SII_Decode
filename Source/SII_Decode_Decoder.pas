@@ -247,8 +247,8 @@ If (Stream.Size - InitialPos) >= SIIBIN_MIN_SIZE then
     Stream_ReadBuffer(Stream,fFileStructure.Header,SizeOf(TSIIBin_Header));
     case fFileStructure.Header.Signature of
       SIIBin_Signature_Bin:
-        If fFileStructure.Header.Unknown <> 2 then
-          raise Exception.CreateFmt('TSIIBin_Decoder.LoadFromStream: Unknown format (0x%.8x).',[fFileStructure.Header.Signature]);
+        If fFileStructure.Header.Version <> 2 then
+          raise Exception.CreateFmt('TSIIBin_Decoder.LoadFromStream: Unsupported version (0x%.8x).',[fFileStructure.Header.Version]);
       SIIBin_Signature_Crypt:
         raise Exception.Create('TSIIBin_Decoder.LoadFromStream: Data are encrypted.');
       SIIBin_Signature_Text:
