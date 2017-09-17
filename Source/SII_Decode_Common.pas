@@ -32,7 +32,7 @@ type
 
   TSIIBin_Header = packed record
     Signature:  UInt32;
-    Unknown:    UInt32;
+    Version:    UInt32;
   end;
 
   TSIIBin_NamedValue = record
@@ -53,7 +53,7 @@ type
   end;
 
   TSIIBin_Value_ID = record
-    Length: UInt8;
+    Length:   UInt8;
     Parts:    array of UInt64;
     PartsStr: array of AnsiString;
   end;
@@ -71,11 +71,12 @@ type
 procedure SIIBin_LoadString(Stream: TStream; var Str: AnsiString);
 procedure SIIBin_LoadID(Stream: TStream; var ID: TSIIBin_Value_ID);
 
+Function SIIBin_EncodeID(ID: AnsiString): UInt64;
 Function SIIBin_DecodeID(EncodedID: UInt64): AnsiString; overload;
 procedure SIIBin_DecodeID(var ID: TSIIBin_Value_ID); overload;
 
-Function SIIBin_SingleToStr(Value: Single): String;
-Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): String;
+Function SIIBin_SingleToStr(Value: Single): AnsiString;
+Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): AnsiString;
 
 Function SIIBin_IsLimitedAlphabet(const Str: AnsiString): Boolean;
 procedure SIIBin_RectifyString(var Str: AnsiString);
@@ -85,7 +86,7 @@ implementation
 
 uses
   SysUtils,
-  BinaryStreaming, FloatHex;
+  BinaryStreaming, FloatHex, StrRect;
 
 {==============================================================================}
 {   Auxiliary functions - implementation                                       }
@@ -115,24 +116,65 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function SIIBin_EncodeID(ID: AnsiString): UInt64;
+const
+  EncodeTable: array[AnsiChar] of Byte = (
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    01, 02, 03, 04, 05, 06, 07, 08, 09, 10,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 37,
+     0, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0);
+var
+  i:  Integer;
+begin
+Result := 0;
+If Length(ID) <= 12 then  // 12 is largest power of 38 smaller than High(UInt64)
+  begin
+    For i := Length(ID) downto 1 do
+      If EncodeTable[ID[i]] > 0 then
+        Result := UInt64((Result * 38) + EncodeTable[ID[i]])
+      else
+        raise Exception.CreateFmt('SIIBin_EncodeID: Invalid character (#%d).',[Ord(ID[i])]);
+  end
+else raise Exception.CreateFmt('SIIBin_EncodeID: ID is too long (%d).',[Length(ID)]);
+end;
+
+//------------------------------------------------------------------------------
+
 Function SIIBin_DecodeID(EncodedID: UInt64): AnsiString;
 const
   DecodeTable: array[1..37] of AnsiChar = (
     '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h',
     'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','_');
 var
-  CharIdx:  Byte;
+  CharIdx:  Integer;
+  Len:      Integer;
 begin
-Result := '';
+SetLength(Result,12);
+Len := 0;
 while EncodedID <> 0 do
   begin
-    CharIdx := EncodedID mod 38;
-    EncodedID := (EncodedID - UInt64(CharIdx)) div 38;
+    CharIdx := Abs(Integer(EncodedID mod 38));
+    EncodedID := UInt64(EncodedID div 38);
     If (CharIdx >= Low(DecodeTable)) and (CharIdx <= High(DecodeTable)) then
-      Result := Result + DecodeTable[CharIdx]
-    else
-      raise Exception.CreateFmt('SIIBin_DecodeID: Character index (%d) out of bounds.',[CharIdx]);
+      begin
+        Inc(Len);
+        Result[Len] := DecodeTable[CharIdx]
+      end
+    else raise Exception.CreateFmt('SIIBin_DecodeID: Character index (%d) out of bounds.',[CharIdx]);
   end;
+SetLength(Result,Len);
 end;
 
 //------------------------------------------------------------------------------
@@ -152,17 +194,17 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SIIBin_SingleToStr(Value: Single): String;
+Function SIIBin_SingleToStr(Value: Single): AnsiString;
 begin
 If (Frac(Value) <> 0) or (Value >= 1e7) then
-  Result := '&' + AnsiLowerCase(SingleToHex(Value))
+  Result := StrToAnsi('&' + AnsiLowerCase(SingleToHex(Value)))
 else
-  Result := Format('%.0f',[Value]);
+  Result := StrToAnsi(Format('%.0f',[Value]));
 end;
 
 //------------------------------------------------------------------------------
 
-Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): String;
+Function SIIBin_IDToStr(ID: TSIIBin_Value_ID): AnsiString;
 var
   i:    Integer;
 {$IFDEF NamelessID_NewHexStyle}
@@ -170,7 +212,7 @@ var
 {$ENDIF}
 begin
 case ID.Length of
-  $00:  Result := 'null';
+  $00:  Result := StrToAnsi('null');
 {$IFDEF NamelessID_NewHexStyle}
   $FF:  If ID.Parts[0] <> 0 then
           begin
@@ -179,23 +221,22 @@ case ID.Length of
             while Temp <> 0 do
               begin
                 If (Temp and not UInt64($FFFF)) <> 0 then
-                  Result := AnsiLowerCase(Format('.%.4x',[UInt16(Temp)])) + Result
+                  Result := StrToAnsi(AnsiLowerCase(Format('.%.4x',[UInt16(Temp)]))) + Result
                 else
-                  Result := AnsiLowerCase(Format('.%x',[UInt16(Temp)])) + Result;
+                  Result := StrToAnsi(AnsiLowerCase(Format('.%x',[UInt16(Temp)]))) + Result;
                 Temp := Temp shr 16;
               end;
-            Result := '_nameless' + Result;
+            Result := AnsiString('_nameless') + Result;
           end
-        else Result := '_nameless.0';
+        else Result := AnsiString('_nameless.0');
 {$ELSE}
-  $FF:  Result := '_nameless' + AnsiUpperCase(Format('.%.4x.%.4x',
-                                             [Int64Rec(ID.Parts[0]).Words[1],
-                                              Int64Rec(ID.Parts[0]).Words[0]]));
+  $FF:  Result := StrToAnsi('_nameless' + AnsiUpperCase(Format('.%.4x.%.4x',
+                   [Int64Rec(ID.Parts[0]).Words[1],Int64Rec(ID.Parts[0]).Words[0]])));
 {$ENDIF}
 else
   Result := ID.PartsStr[0];
   For i := Succ(Low(ID.Parts)) to High(ID.Parts) do
-    Result := Result + '.' + ID.PartsStr[i];
+    Result := Result + AnsiString('.') + ID.PartsStr[i];
 end;
 end;
 
@@ -240,7 +281,7 @@ If NonASCII then
         If (Ord(Str[i]) < 127) and (Ord(Str[i]) > 31) then
           Temp := Temp + Str[i]
         else
-          Temp := Temp + AnsiLowerCase(Format('\x%.2x',[Ord(Str[i])]));
+          Temp := Temp + StrToAnsi(AnsiLowerCase(Format('\x%.2x',[Ord(Str[i])])));
       end;
     Str := Temp;
   end;

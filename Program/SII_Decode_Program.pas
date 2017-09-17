@@ -16,16 +16,16 @@ procedure Main;
 implementation
 
 uses
-  SysUtils, Classes, StrRect,
+  SysUtils, StrRect, ExplicitStringLists,
   SII_Decode_Decoder;
 
 procedure Main;
 var
-  Output: TStringList;
+  Output: TAnsiStringList;
 begin
 try
   WriteLn('************************************');
-  WriteLn('*        SII Decode utility        *');
+  WriteLn('*     SII Decode utility 1.0.1     *');
   WriteLn('*     (c) 2017 Frantisek Milt      *');
   WriteLn('************************************');
   WriteLn;
@@ -44,8 +44,9 @@ try
     begin
       with TSIIBin_Decoder.Create do
       try
-        Output := TStringList.Create;
+        Output := TAnsiStringList.Create;
         try
+          Output.TrailingLineBreak := False;
           WriteLn('Loading...');
           LoadFromFile(RTLToStr(ParamStr(1)));
           WriteLn('Converting...');
