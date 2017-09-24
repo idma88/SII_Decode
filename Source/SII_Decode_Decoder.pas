@@ -26,7 +26,7 @@ const
     (4 bytes) signature
     (4 bytes) version (2)
   (5 bytes) an invalid layout block
-    (4 bytes) layout index (0)
+    (4 bytes) block type (0)
     (1 byte ) unknown (0))
 }
   SIIBIN_MIN_SIZE = 13;
