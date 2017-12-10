@@ -2,7 +2,7 @@
 
                                SII Decode utility
 
-                                 version 1.0.x
+                                 version 1.2.x
 
 ================================================================================
 
@@ -24,14 +24,14 @@ Description
 This utility is intended to decode binary form of SII save files (saves from
 truck games developed by SCS Software) into their textual form.
 
-At this moment, the binary format specification is not publicly available. 
-Information necessary for the conversion were obtained only by observing data 
-patterns in existing saves, therefore the decoder is not complete and any 
+At this moment, the binary format specification is not publicly available.
+Information necessary for the conversion were obtained only by observing data
+patterns in existing saves, therefore the decoder is not complete and any
 conversion made by it cannot be verified. It is strongly recommended to backup
 original data in case the conversion is done wrong.
 
-The project is primarily developed in Delphi 7 Personal and Lazarus 1.6.x
-(FPC 3.x) and therefore can be compiled by those development tools. It should be 
+The project is primarily developed in Delphi 7 Personal and Lazarus 1.8.x
+(FPC 3.x) and therefore can be compiled by those development tools. It should be
 also possible to compile it in newer versions of mentioned tools/compilers.
 This utility can be compiled into both 32bit and 64bit binaries.
 
@@ -43,9 +43,9 @@ List of folders with description of their content:
 
   .\
     Root folder. Contains license and readme files.
-    
+
   .\Documents
-  
+
     Documentation of the decoder.
 
   .\Source
@@ -91,4 +91,4 @@ František Milt, frantisek.milt@gmail.com
 
 Copyright
 ----------------------------------------
-©2017 František Milt, all rights reserved
+©2017-2018 František Milt, all rights reserved
