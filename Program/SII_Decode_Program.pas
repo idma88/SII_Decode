@@ -24,10 +24,10 @@ var
   Output: TAnsiStringList;
 begin
 try
-  WriteLn('************************************');
-  WriteLn('*     SII Decode utility 1.1.0     *');
-  WriteLn('*     (c) 2017 Frantisek Milt      *');
-  WriteLn('************************************');
+  WriteLn('**************************************');
+  WriteLn('*      SII Decode utility 1.2.0      *');
+  WriteLn('*   (c) 2017 - 2018 Frantisek Milt   *');
+  WriteLn('**************************************');
   WriteLn;
   If ParamCount <= 0 then
     begin
